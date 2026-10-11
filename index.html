@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>情绪状态自评 · PHQ-9</title>
+<style>
+:root{
+  --bg:#F4F3F0; --card:#FFFFFF; --ink:#22252C; --ink2:#585D68;
+  --ink3:#9296A0; --line:#E5E3DD;
+  --brand:#3E7A8C; --brand-soft:#EAF2F4;
+  --calm:#3E8E6E; --blue:#4A7C9E; --amber:#B0801F; --orange:#B4632C; --red:#A6453C;
+  --care:#8A5A2B;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+  font-size:15px;line-height:1.6;
+  display:flex;align-items:flex-start;justify-content:center;min-height:100vh;
+}
+.phone{
+  width:390px;height:844px;background:var(--bg);
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  box-shadow:0 0 0 1px rgba(0,0,0,.08),0 24px 60px rgba(0,0,0,.14);
+}
+@media(max-width:430px){
+  body{display:block;}
+  .phone{width:100vw;height:100vh;height:100dvh;box-shadow:none;border-radius:0;}
+}
+@media(min-width:431px){ .phone{border-radius:28px;margin:24px 0;} }
+
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;
+  background:var(--bg);opacity:0;pointer-events:none;
+  transform:translateY(10px);transition:opacity .28s ease,transform .28s ease;}
+.screen.on{opacity:1;pointer-events:auto;transform:none;z-index:2;}
+
+/* ---------- 封面 ---------- */
+/* 封面：目标是一屏放下、不需要滚动。
+   结构上把「开始自评」拆成固定页脚（.cover-cta），说明内容放 .cover-body。
+   这样即使遇到极矮的屏幕、内容真的放不下，按钮也不会被挤出屏幕 ——
+   最坏情况只是上方说明文字可滚，主操作永远可见。 */
+.cover{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.cover-body{flex:1;min-height:0;overflow-y:auto;padding:0 24px 8px;
+  -webkit-overflow-scrolling:touch;}
+.cover-cta{flex:none;background:var(--bg);
+  padding:10px 24px calc(16px + env(safe-area-inset-bottom));}
+.cover-hero{padding:34px 0 16px;}
+.cover-badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;letter-spacing:.04em;
+  color:var(--ink2);background:#fff;border:1px solid var(--line);
+  padding:5px 11px;border-radius:20px;}
+.cover-badge i{width:6px;height:6px;border-radius:50%;background:var(--brand);}
+h1.cover-title{font-size:26px;line-height:1.3;font-weight:700;margin:13px 0 9px;letter-spacing:-.4px;}
+.cover-title em{font-style:normal;color:var(--brand);}
+.cover-desc{font-size:13.5px;color:var(--ink2);margin:0;line-height:1.62;}
+.cover-foot{font-size:11.5px;color:var(--ink3);line-height:1.6;margin:0;text-align:center;padding-top:12px;}
+
+/* 三步流程压成一行，替掉原来的竖排列表（省约 130px） */
+.flow{display:flex;gap:6px;background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:11px 10px;margin-bottom:10px;}
+.flow span{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:11.5px;color:var(--ink2);white-space:nowrap;}
+.flow b{width:16px;height:16px;border-radius:50%;background:var(--brand);color:#fff;
+  font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;}
+
+/* 重要说明卡：不是诊断 */
+.notice{background:#FBF7EF;border:1px solid #EDE0C9;border-radius:12px;
+  padding:12px 14px;margin-bottom:10px;}
+.notice h4{font-size:12px;font-weight:700;color:#7A5A1E;margin:0 0 5px;letter-spacing:.02em;}
+.notice p{font-size:12px;color:#6B5A38;line-height:1.68;margin:0;}
+
+/* 求助提示 */
+.helpcard{background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;margin-bottom:10px;}
+.helpcard p{font-size:12px;color:var(--ink2);line-height:1.68;margin:0;}
+.helpcard b{color:var(--ink);font-weight:600;}
+
+/* 高屏：把版式放大一档，避免内容全挤在顶部、底下空一大块。
+   矮屏不受影响（这一档只在 ≥780px 生效）。 */
+@media (min-height:780px){
+  .cover-hero{padding:52px 0 26px;}
+  h1.cover-title{font-size:28px;}
+  .cover-desc{font-size:14px;}
+  .notice,.helpcard{padding:14px 16px;}
+  .notice p,.helpcard p{font-size:12.5px;}
+  .flow{padding:13px 10px;}
+  .flow span{font-size:12px;}
+  .notice,.flow,.helpcard{margin-bottom:14px;}
+}
+
+/* 矮屏：整体收一档，目标仍然是说明内容也一屏放下 */
+@media (max-height:700px){
+  .cover-hero{padding:24px 0 12px;}
+  h1.cover-title{font-size:23px;margin:10px 0 7px;}
+  .cover-desc{font-size:12.5px;}
+  .notice,.helpcard{padding:10px 12px;}
+  .notice h4{font-size:11.5px;margin-bottom:4px;}
+  .notice p,.helpcard p{font-size:11.5px;line-height:1.6;}
+  .flow{padding:9px 8px;}
+  .flow span{font-size:11px;}
+  .notice,.flow,.helpcard{margin-bottom:8px;}
+  .cover-foot{font-size:11px;padding-top:8px;}
+}
+@media (max-height:620px){
+  .cover-hero{padding:16px 0 10px;}
+  h1.cover-title{font-size:21px;margin:8px 0 6px;}
+  .btn-primary{padding:14px;font-size:15px;}
+  .btn-ghost{padding:11px;font-size:13px;margin-top:8px;}
+  .cover-body{padding-bottom:4px;}
+}
+
+.btn-primary{width:100%;padding:16px;border-radius:14px;border:none;
+  background:var(--brand);color:#fff;font-size:16px;font-weight:600;font-family:inherit;
+  letter-spacing:.02em;}
+.btn-primary:active{opacity:.85;}
+.btn-ghost{width:100%;padding:13px;border-radius:14px;border:1px solid var(--line);
+  background:transparent;color:var(--ink2);font-size:14px;font-family:inherit;margin-top:10px;}
+
+/* ---------- 答题 ---------- */
+/* 答题页整屏固定，任何情况下都不滚动。
+   .q-bar 与 .q-foot 锁死不参与收缩，中间题干区吸收全部高度差。 */
+#s-quiz{overflow:hidden;background:#FFFFFF;}
+.q-bar{flex:none;padding:calc(12px + env(safe-area-inset-top)) 16px 0;background:#fff;
+  border-bottom:1px solid var(--line);}
+.q-bar-top{display:flex;align-items:center;justify-content:space-between;height:30px;}
+.q-back{display:flex;align-items:center;gap:3px;font-size:13px;color:var(--ink2);
+  background:none;border:none;padding:4px 6px 4px 0;font-family:inherit;}
+.q-back.hide{visibility:hidden;}
+.q-count{font-size:12.5px;color:var(--ink3);font-variant-numeric:tabular-nums;}
+.q-count b{color:var(--ink);font-weight:600;}
+.seg{display:flex;gap:3px;margin:10px 0 12px;}
+.seg i{flex:1;height:4px;border-radius:2px;background:#EAE9E4;overflow:hidden;}
+.seg i b{display:block;height:100%;width:0;border-radius:2px;background:var(--brand);
+  transition:width .5s cubic-bezier(.05,.7,.1,1);}
+
+.q-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
+  padding:0 24px 4px;overflow:hidden;}
+.q-stage{will-change:transform,opacity;}
+.q-lead{font-size:12.5px;color:var(--ink3);letter-spacing:.04em;margin-bottom:14px;text-align:center;}
+.q-text{font-size:21px;line-height:1.55;font-weight:500;letter-spacing:-.2px;text-align:center;}
+
+.q-foot{flex:none;padding:0 16px calc(18px + env(safe-area-inset-bottom));}
+.opt{width:100%;display:flex;align-items:center;gap:12px;
+  background:#fff;border:1px solid var(--line);border-radius:13px;
+  padding:15px 16px;margin-bottom:9px;font-family:inherit;font-size:15px;
+  color:var(--ink);text-align:left;cursor:pointer;
+  transition:border-color .16s,background .16s,transform .12s;}
+.opt:last-child{margin-bottom:0;}
+.opt .idx{width:24px;height:24px;border-radius:50%;flex:none;display:flex;
+  align-items:center;justify-content:center;font-size:11.5px;font-weight:600;
+  background:#F1F0EB;color:var(--ink3);transition:background .16s,color .16s;}
+.opt.sel{border-color:var(--brand);background:var(--brand-soft);}
+.opt.sel .idx{background:var(--brand);color:#fff;}
+.opt:active{transform:scale(.985);}
+.opt.pop{animation:optPop .34s cubic-bezier(.34,1.35,.64,1);}
+@keyframes optPop{0%{transform:scale(1)}40%{transform:scale(1.025)}100%{transform:scale(1)}}
+
+/* 矮屏（含微信内置浏览器这类可用高度被压缩的场景）收紧选项区，
+   保证 10 题在任何机型上都一屏答完 */
+@media (max-height:720px){
+  .q-body{padding:0 20px 2px;}
+  .q-lead{font-size:11.5px;margin-bottom:10px;}
+  .q-text{font-size:19px;line-height:1.5;}
+  .q-foot{padding:0 12px calc(12px + env(safe-area-inset-bottom));}
+  .opt{padding:12px 14px;margin-bottom:7px;font-size:14px;border-radius:11px;}
+  .opt .idx{width:21px;height:21px;font-size:11px;}
+}
+@media (max-height:600px){
+  .q-bar{padding-top:calc(8px + env(safe-area-inset-top));}
+  .seg{margin:7px 0 9px;}
+  .q-text{font-size:17.5px;}
+  .opt{padding:10px 13px;margin-bottom:6px;font-size:13.5px;}
+}
+
+/* ---------- 计算中 ---------- */
+.calc{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.orb{width:52px;height:52px;border-radius:50%;border:2px solid var(--line);
+  border-top-color:var(--brand);animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.calc-t{font-size:15px;font-weight:600;}
+.calc-s{font-size:12.5px;color:var(--ink3);}
+.calc-bar{width:180px;height:3px;border-radius:2px;background:#E9E8E3;overflow:hidden;}
+.calc-bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .35s;}
+
+/* ---------- 结果 ---------- */
+.res{flex:1;overflow-y:auto;background:var(--bg);-webkit-overflow-scrolling:touch;}
+.res-hero{padding:calc(40px + env(safe-area-inset-top)) 24px 28px;text-align:center;color:#fff;}
+.res-score{font-size:56px;font-weight:700;line-height:1;letter-spacing:-1px;
+  font-variant-numeric:tabular-nums;}
+.res-score small{font-size:19px;font-weight:500;opacity:.6;margin-left:4px;}
+.res-level{display:inline-block;font-size:13.5px;font-weight:600;margin-top:14px;
+  background:rgba(255,255,255,.2);padding:6px 15px;border-radius:20px;}
+.res-sub{font-size:12.5px;color:rgba(255,255,255,.78);margin-top:12px;line-height:1.7;}
+
+.sec{background:var(--card);border-radius:16px;margin:14px 16px 0;padding:18px 18px 20px;}
+.sec h3{font-size:15px;font-weight:600;margin:0 0 4px;}
+.sec .hint{font-size:12px;color:var(--ink3);margin:0 0 14px;line-height:1.65;}
+
+/* 分级刻度 */
+.scale-map{margin-top:4px;}
+.scale-row{display:flex;gap:3px;height:8px;border-radius:4px;overflow:hidden;}
+.scale-row i{flex:1;border-radius:2px;opacity:.32;}
+.scale-row i.on{opacity:1;}
+.scale-labels{display:flex;gap:3px;margin-top:7px;}
+.scale-labels span{flex:1;font-size:9.5px;color:var(--ink3);text-align:center;line-height:1.35;}
+.scale-labels span.on{color:var(--ink);font-weight:600;}
+
+/* 症状明细 */
+.sx{margin-bottom:13px;}
+.sx:last-child{margin-bottom:0;}
+.sx-top{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:6px;}
+.sx-top b{font-weight:500;flex:1;}
+.sx-top em{font-style:normal;font-size:12px;color:var(--ink3);flex:none;}
+.sx-track{display:flex;gap:3px;}
+.sx-track i{flex:1;height:5px;border-radius:3px;background:#EDECE7;}
+.sx-track i.f{background:var(--lv,#4A7C9E);}
+.sx.flag .sx-top b{color:var(--red);font-weight:600;}
+
+/* 第9题专项关怀 */
+.care{margin:14px 16px 0;background:#FDF6EF;border:1px solid #EFDCC4;
+  border-radius:16px;padding:20px 18px;}
+.care h3{font-size:15px;font-weight:700;color:#8A5A2B;margin:0 0 10px;}
+.care p{font-size:13.5px;color:#6B5138;line-height:1.8;margin:0 0 12px;}
+.care p:last-child{margin-bottom:0;}
+.care b{color:#7A4A18;font-weight:600;}
+.tel{display:flex;align-items:center;justify-content:center;gap:8px;
+  background:#fff;border:1px solid #EFDCC4;border-radius:12px;padding:15px;
+  margin:4px 0 12px;text-decoration:none;color:#8A5A2B;}
+.tel .num{font-size:24px;font-weight:700;letter-spacing:.06em;font-variant-numeric:tabular-nums;}
+.tel .lbl{font-size:11.5px;color:#9A8570;text-align:left;line-height:1.45;}
+
+/* 建议 */
+.advice li{font-size:13.5px;line-height:1.75;margin-bottom:9px;padding-left:16px;position:relative;}
+.advice li:last-child{margin-bottom:0;}
+.advice li::before{content:'';position:absolute;left:0;top:9px;width:5px;height:5px;
+  border-radius:50%;background:var(--brand);}
+
+.res-foot{margin:14px 16px 0;background:var(--card);border-radius:16px;padding:16px 18px;}
+.res-foot p{font-size:12px;color:var(--ink3);line-height:1.8;margin:0;}
+.res-foot b{color:var(--ink2);font-weight:600;}
+
+.actbar{padding:18px 16px calc(24px + env(safe-area-inset-bottom));}
+
+.stage-canvas{position:absolute;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;}
+.preview{margin:14px 16px 0;background:var(--card);border-radius:16px;padding:16px;text-align:center;}
+.preview img{width:100%;border-radius:12px;display:block;background:var(--bg);
+  -webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
+
+.toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:rgba(34,37,44,.94);color:#fff;font-size:13.5px;padding:11px 18px;
+  border-radius:10px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;
+  max-width:80%;text-align:center;line-height:1.6;}
+.toast.on{opacity:1;}
+
+@media (prefers-reduced-motion: reduce){
+  .screen{transition:opacity .12s;transform:none;}
+  .opt.pop{animation:none;}
+  .seg i b{transition:none;}
+  .orb{animation-duration:2.4s;}
+}
+</style>
+</head>
+<body>
+
+<div class="phone">
+
+  <!-- ============ 封面 ============ -->
+  <section class="screen on" id="s-cover">
+    <div class="cover">
+      <div class="cover-body">
+      <div class="cover-hero">
+        <span class="cover-badge"><i></i>10 题 · 约 2 分钟</span>
+        <h1 class="cover-title">最近两周，你<em>还好吗</em>？</h1>
+        <p class="cover-desc">用国际通用的 PHQ-9 量表，快速了解你最近两周的情绪状态。</p>
+      </div>
+
+      <div class="notice">
+        <h4>这不是诊断</h4>
+        <p>PHQ-9 是筛查工具，不是诊断工具。结果只说明你最近两周的症状分布，<b>任何精神心理问题的诊断都必须由医生面诊后作出</b>。</p>
+      </div>
+
+      <div class="flow">
+        <span><b>1</b>回想最近两周</span>
+        <span><b>2</b>如实作答</span>
+        <span><b>3</b>看结果与建议</span>
+      </div>
+
+      <div class="helpcard">
+        <p>如果现在就有<b>伤害自己的想法</b>，不必先做完测试——直接拨打 <b>12356</b>（全国心理援助热线，24 小时）或前往最近医院急诊。</p>
+      </div>
+
+      <p class="cover-foot">本测试不收集任何个人信息，作答只保存在你自己的手机上。</p>
+      </div>
+
+      <div class="cover-cta">
+        <button class="btn-primary" onclick="startTest(false)">开始自评</button>
+        <button class="btn-ghost" id="btnResume" onclick="startTest(true)">继续上次未完成的进度</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 答题 ============ -->
+  <section class="screen" id="s-quiz">
+    <div class="q-bar">
+      <div class="q-bar-top">
+        <button class="q-back" id="btnBack" onclick="prevQ()">‹ 上一题</button>
+        <div class="q-count"><b id="qNow">1</b> / <span id="qTotal">10</span></div>
+      </div>
+      <div class="seg" id="seg"></div>
+    </div>
+
+    <div class="q-body">
+      <div class="q-stage" id="qStage">
+        <div class="q-lead" id="qLead">在过去两周里，你被以下问题困扰的频率是？</div>
+        <div class="q-text" id="qText"></div>
+      </div>
+    </div>
+
+    <div class="q-foot" id="qFoot"></div>
+  </section>
+
+  <!-- ============ 计算中 ============ -->
+  <section class="screen" id="s-calc">
+    <div class="calc">
+      <div class="orb"></div>
+      <div class="calc-t">正在汇总你的作答</div>
+      <div class="calc-s" id="calcS">正在计算各条目得分…</div>
+      <div class="calc-bar"><i id="calcBar"></i></div>
+    </div>
+  </section>
+
+  <!-- ============ 结果 ============ -->
+  <section class="screen" id="s-result">
+    <div class="res" id="resScroll">
+      <div class="res-hero" id="resHero">
+        <div class="res-score" id="resScore">0<small>/ 27</small></div>
+        <div class="res-level" id="resLevel"></div>
+        <div class="res-sub" id="resSub"></div>
+      </div>
+
+      <div id="careBox"></div>
+
+      <div class="sec">
+        <h3>你的得分落在哪个区间</h3>
+        <p class="hint" id="mapHint"></p>
+        <div class="scale-map">
+          <div class="scale-row" id="scaleRow"></div>
+          <div class="scale-labels" id="scaleLabels"></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <h3>9 个条目的具体情况</h3>
+        <p class="hint">条越满，说明这项症状出现得越频繁。这是给你自己和医生看的细节。</p>
+        <div id="sxList"></div>
+      </div>
+
+      <div class="sec" id="impairSec" style="display:none">
+        <h3>对日常生活的影响</h3>
+        <div id="impairBody"></div>
+      </div>
+
+      <div class="sec">
+        <h3>接下来可以做什么</h3>
+        <ul class="advice" id="adviceList" style="margin:0;padding:0;list-style:none;"></ul>
+      </div>
+
+      <div class="sec">
+        <h3>需要专业帮助时</h3>
+        <p class="hint">这两条路都是正规的，不用觉得挂号就是"病得很重"。</p>
+        <ul class="advice" style="margin:0;padding:0;list-style:none;">
+          <li><b>综合医院的心理科 / 精神科</b>：可以先挂普通门诊，医生会做进一步评估。把这份结果带给医生看，能帮他更快了解你的情况。</li>
+          <li><b>12356 心理援助热线</b>：24 小时、匿名、免费。不想去医院、还没想好怎么说的时候，可以先打这个。</li>
+        </ul>
+        <a class="tel" href="tel:12356">
+          <span class="num">12356</span>
+          <span class="lbl">全国心理援助热线<br>24 小时 · 匿名 · 免费</span>
+        </a>
+      </div>
+
+      <div class="res-foot">
+        <p><b>关于这个结果</b><br>
+        本自评使用 PHQ-9（患者健康问卷-9），一个国际通用的抑郁症状筛查量表。分数反映的是你最近两周的症状频率，<b>不等于诊断</b>，也不能替代医生面诊。<br><br>
+        情绪的波动很常见，一次得分偏高并不意味着得了抑郁症。如果症状持续两周以上，请让专业的人帮你判断。</p>
+      </div>
+
+      <div class="preview" id="previewBox" style="display:none">
+        <img id="resultImg" alt="你的自评结果" draggable="false">
+      </div>
+
+      <div class="actbar">
+        <button class="btn-primary" onclick="saveResult()">保存结果图片</button>
+        <button class="btn-ghost" onclick="copyResult()">复制文字结果</button>
+        <button class="btn-ghost" onclick="restart()">重新自评一次</button>
+      </div>
+    </div>
+    <canvas id="resCanvas" width="690" height="1220" class="stage-canvas"></canvas>
+  </section>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ============================================================
+   PHQ-9 患者健康问卷
+   题目为官方中文版原文。PHQ-9 由 Pfizer 开发并声明可自由使用，
+   无需授权即可复制、翻译、展示和分发。
+   回想期为「过去两周」，四级计分 0–3。
+   ============================================================ */
+
+const ITEMS = [
+  '做事时提不起劲或没有兴趣',
+  '感到心情低落、沮丧或绝望',
+  '入睡困难、睡不安稳或睡得过多',
+  '感觉疲倦或没有活力',
+  '食欲不振或吃太多',
+  '觉得自己很糟，或觉得自己很失败，或让自己、家人失望',
+  '对事物专注有困难，例如阅读报纸或看电视时',
+  '动作或说话速度缓慢到别人已经察觉；或刚好相反——变得比平日更烦躁或坐立不安、动来动去',
+  '有不如死掉或用某种方式伤害自己的念头'
+];
+/* 第 10 题：功能损害，不计入总分，单独报告 */
+const IMPAIR_Q = '以上这些问题，在多大程度上影响了你的工作、家务，或与人相处？';
+
+const OPTS = ['完全不会','好几天','一半以上的天数','几乎每天'];
+const OPTS_SHORT = ['完全没有','好几天','一半以上','几乎每天'];
+const IMPAIR_OPTS = ['完全没有困难','有一些困难','非常困难','极度困难'];
+
+const NQ = 10;            // 9 项症状 + 1 项功能损害
+const SCORED = 9;         // 计入总分的是前 9 项
+const SCALE_MAX = OPTS.length;
+const SEG_N = 5;
+
+/* 分级：与 PHQ-9 标准切分一致 */
+const LEVELS = [
+  { max:4,  name:'最小或没有',  col:'#3E8E6E',
+    sub:'你最近两周报告的症状很少或几乎没有。',
+    map:'0 – 4 分 · 最小或没有' },
+  { max:9,  name:'轻度',        col:'#4A7C9E',
+    sub:'你报告了一些抑郁相关的症状，强度较轻。',
+    map:'5 – 9 分 · 轻度' },
+  { max:14, name:'中度',        col:'#B0801F',
+    sub:'你的症状已经到中度水平，值得认真对待。',
+    map:'10 – 14 分 · 中度' },
+  { max:19, name:'中重度',      col:'#B4632C',
+    sub:'你的症状比较明显，已经到了需要专业介入的程度。',
+    map:'15 – 19 分 · 中重度' },
+  { max:27, name:'重度',        col:'#A6453C',
+    sub:'你报告的症状很显著，建议尽快让专业人员看一看。',
+    map:'20 – 27 分 · 重度' }
+];
+const LEVEL_RANGES = ['0–4','5–9','10–14','15–19','20–27'];
+
+const ADVICE = [
+  [ /* 0-4 */
+    '目前的得分在正常范围内，不需要特别处理。',
+    '睡眠、饮食和规律运动这三件事对情绪的影响比想象中更大，值得先守住。',
+    '可以每隔两三周测一次，把它当作观察自己状态的参照，而不是一次性的结论。'
+  ],
+  [ /* 5-9 */
+    '先别急着给自己下定义。轻度症状很常见，也常常能自行缓解。',
+    '把睡眠和作息当成第一优先级——很多情绪问题是从睡不好开始的。',
+    '如果这些症状持续超过两周没有好转，或者开始影响工作与关系，建议找心理咨询师聊一次。',
+    '留意一下症状通常出现在什么情境下，记录本身就能帮你看清规律。'
+  ],
+  [ /* 10-14 */
+    '建议主动寻求专业帮助，不用等到"实在撑不住了"再去。',
+    '综合医院的心理科或精神科都可以先挂普通门诊；也可以选择正规的心理咨询机构。',
+    '这个阶段通过心理咨询或医生的评估，通常能获得明显改善，越早介入越省力。',
+    '把这份结果保存下来带过去，能帮医生更快了解你的情况。'
+  ],
+  [ /* 15-19 */
+    '建议尽快到精神科或心理科就诊，由医生做进一步评估。',
+    '中重度阶段，规范的医学治疗（心理治疗和/或药物治疗）通常效果明确，不必抗拒。',
+    '就诊时把这份结果带给医生看，并如实说明症状持续了多久、有没有影响睡眠和吃饭。',
+    '如果方便，可以让一位信任的人陪你去。'
+  ],
+  [ /* 20-27 */
+    '请尽快就诊，最好在这几天内。',
+    '这份得分说明症状已经比较显著，需要医生来评估和处理。',
+    '就诊时请带上这份结果，并如实说明症状的持续时间和对生活的影响。',
+    '如果出现伤害自己的念头，请不要独自待着——拨打 12356，或直接前往最近医院的急诊。'
+  ]
+];
+
+/* ============ 交互 ============ */
+function $(id){ return document.getElementById(id); }
+function show(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  $(id).classList.add('on');
+}
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 2000);
+}
+
+const LS_KEY = 'phq9_p';
+let idx = 0, answers = new Array(NQ).fill(-1);
+let RESULT = null;
+
+const REDUCED = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let animToken = 0;
+
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({ i: idx, a: answers })); }catch(e){} }
+
+function startTest(resume){
+  let ok = false;
+  if(resume){
+    try{
+      const p = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+      if(p && p.a && p.a.length === NQ && p.a.some(v => v >= 0)){ idx = p.i; answers = p.a; ok = true; }
+    }catch(e){}
+  }
+  if(!ok){ idx = 0; answers = new Array(NQ).fill(-1); }
+  if(!ok && resume) toast('没有找到可恢复的进度，从头开始');
+
+  const seg = $('seg'); seg.innerHTML = '';
+  for(let g = 0; g < SEG_N; g++) seg.innerHTML += '<i><b></b></i>';
+  buildOptions();
+  paintProgress(true);
+  renderQ(0);
+  show('s-quiz');
+}
+
+/* 选项只构建一次，之后只切换选中态——手指落点始终不变，
+   10 题答下来会形成肌肉记忆，这是短问卷最省力的做法。 */
+function buildOptions(){
+  const foot = $('qFoot'); foot.innerHTML = '';
+  for(let v = 0; v < SCALE_MAX; v++){
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = '<span class="idx">' + (v + 1) + '</span><span class="lb"></span>';
+    b.onclick = () => pick(v);
+    foot.appendChild(b);
+  }
+}
+
+function currentOpts(){ return idx === SCORED ? IMPAIR_OPTS : OPTS; }
+
+function paintOptions(instant){
+  const b = $('qFoot').querySelectorAll('.opt');
+  const opts = currentOpts();
+  b.forEach((el, i) => {
+    el.querySelector('.lb').textContent = opts[i];
+    el.classList.toggle('sel', answers[idx] === i);
+    el.classList.remove('pop');
+  });
+}
+
+/* 前 9 项全为 0 时，第 10 题不适用（量表原文是条件题），跳过 */
+function needImpair(){ return answers.slice(0, SCORED).some(v => v > 0); }
+function effectiveTotal(){ return needImpair() ? NQ : SCORED; }
+
+/* 进度条按「已完成 / 实际需要作答的题数」的比例填充，
+   所以跳过第 10 题时它照样能走满 */
+function paintProgress(instant){
+  const total = effectiveTotal();
+  const done = answers.filter(a => a >= 0).length;
+  const f = total ? Math.min(1, done / total) : 0;
+  document.querySelectorAll('#seg i b').forEach((b, g) => {
+    const seg = Math.max(0, Math.min(1, (f - g / SEG_N) * SEG_N));
+    if(instant){
+      b.style.transition = 'none'; b.style.width = (seg * 100) + '%';
+      void b.offsetWidth; b.style.transition = '';
+    } else {
+      b.style.width = (seg * 100) + '%';
+    }
+  });
+}
+
+function paintQ(){
+  $('qNow').textContent = idx + 1;
+  $('qTotal').textContent = NQ;
+  $('qLead').textContent = (idx === SCORED)
+    ? '最后一个问题（不计入总分）'
+    : '在过去两周里，你被以下问题困扰的频率是？';
+  $('qText').textContent = (idx === SCORED) ? IMPAIR_Q : ITEMS[idx];
+  $('btnBack').classList.toggle('hide', idx === 0);
+  paintOptions(false);
+}
+
+/* 题目切换动效：纵向位移 + 淡入淡出。
+   不用横向滑动——iOS 边缘左滑返回、部分 Android WebView 右滑返回
+   会和横向动效在手势语义上打架，纵向是移动端唯一没有系统手势占用的方向。
+   前进 = 旧题上移离场、新题自下方升起；回退方向相反。 */
+function renderQ(dir){
+  const stage = $('qStage');
+  const paint = () => { paintQ(); paintProgress(false); };
+
+  /* 首屏、降级环境、不支持 Web Animations 时直接渲染 */
+  if(dir === 0 || REDUCED || !stage.animate){ paint(); return; }
+
+  const my = ++animToken;
+  const outY = dir === 1 ? -14 :  14;   // 旧题离场方向
+  const inY  = dir === 1 ?  18 : -18;   // 新题入场起点
+
+  let fired = false;
+  const swap = () => {
+    if(fired || my !== animToken) return;
+    fired = true;
+    stage.style.opacity = '0';          /* 先压住，否则换内容的一帧会闪回旧题 */
+    paint();
+    const enter = stage.animate(
+      [{ opacity: 0, transform: 'translateY(' + inY + 'px)' },
+       { opacity: 1, transform: 'translateY(0)' }],
+      { duration: 240, easing: 'cubic-bezier(.05,.7,.1,1)' }
+    );
+    const clear = () => { if(my === animToken) stage.style.opacity = ''; };
+    enter.finished.then(clear).catch(clear);
+    setTimeout(clear, 420);             /* 兜底：动画没跑也要把题干显出来 */
+  };
+
+  const leave = stage.animate(
+    [{ opacity: 1, transform: 'translateY(0)' },
+     { opacity: 0, transform: 'translateY(' + outY + 'px)' }],
+    { duration: 120, easing: 'cubic-bezier(.4,0,1,1)' }
+  );
+  leave.finished.then(swap).catch(swap);
+  /* 兜底：WebView、后台标签页、无 GPU 环境里动画可能不触发，
+     finished 永不 resolve。用定时器保证题目一定会被渲染，不让用户看到空白。 */
+  setTimeout(swap, 260);
+}
+
+function pick(v){
+  answers[idx] = v; save();
+  const el = $('qFoot').querySelectorAll('.opt')[v];
+  el.classList.add('sel');
+  void el.offsetWidth;
+  el.classList.add('pop');
+  paintProgress(false);
+  setTimeout(() => {
+    /* 刚答完第 9 题、且前 9 项全为 0 → 第 10 题不适用，直接结算 */
+    if(idx === SCORED - 1 && !needImpair()){
+      answers[SCORED] = -1;
+      paintProgress(false);
+      finish();
+      return;
+    }
+    if(idx === NQ - 1){ finish(); }
+    /* 推进后再存一次，否则续答会停回已经答过的那一题 */
+    else { idx++; save(); renderQ(1); }
+  }, 210);
+}
+
+function prevQ(){ if(idx > 0){ idx--; renderQ(-1); } }
+
+/* ============ 计分 ============ */
+function scoreTotal(){
+  let s = 0;
+  for(let i = 0; i < SCORED; i++) s += Math.max(0, answers[i]);
+  return s;
+}
+function levelOf(total){
+  for(let i = 0; i < LEVELS.length; i++) if(total <= LEVELS[i].max) return i;
+  return LEVELS.length - 1;
+}
+
+function finish(){
+  show('s-calc');
+  const steps = ['正在汇总你的作答…','正在计算各条目得分…','正在对照分级区间…','正在生成建议…'];
+  const bar = $('calcBar'), s = $('calcS');
+  let p = 0; bar.style.width = '0%';
+  const timer = setInterval(() => {
+    p++;
+    bar.style.width = (p * 25) + '%';
+    s.textContent = steps[Math.min(p, steps.length - 1)];
+    if(p >= 4){ clearInterval(timer); setTimeout(renderResult, 300); }
+  }, 300);
+}
+
+/* ============ 结果 ============ */
+function renderResult(){
+  const total = scoreTotal();
+  const li = levelOf(total);
+  const lv = LEVELS[li];
+  const risky = answers[8] > 0;                 // 第 9 题（自杀意念）有任何分
+  const impair = answers[SCORED];               // 第 10 题
+
+  RESULT = { total, li, lv, risky, impair, answers: answers.slice(),
+             date: new Date() };
+
+  const hero = $('resHero');
+  hero.style.background = lv.col;
+  $('resScore').innerHTML = total + '<small>/ 27</small>';
+  $('resLevel').textContent = '提示：' + lv.name + '抑郁症状';
+  $('resSub').textContent = lv.sub;
+  $('s-result').style.background = mixWhite(lv.col, 0.06);
+
+  /* —— 第 9 题专项关怀（最优先显示，不等总分）—— */
+  const care = $('careBox');
+  if(risky){
+    care.innerHTML =
+      '<div class="care">' +
+        '<h3>你提到了「伤害自己的念头」</h3>' +
+        '<p>你在第 9 题上选择了「<b>' + OPTS[answers[8]] + '</b>」。' +
+        '这个问题很多人都会有，它不代表你软弱，也不代表事情没有转机——但它是一个值得被认真对待的信号。</p>' +
+        '<p>请把这件事告诉一个你信任的人，或者直接打下面这个电话。对方会听你说，不会评判你。</p>' +
+        '<a class="tel" href="tel:12356">' +
+          '<span class="num">12356</span>' +
+          '<span class="lbl">全国心理援助热线<br>24 小时 · 匿名 · 免费</span>' +
+        '</a>' +
+        '<p>如果情况紧急、或者你觉得撑不到明天，请直接前往最近医院的急诊。' +
+        '如果身边有人，请让他陪着你。</p>' +
+      '</div>';
+  } else {
+    care.innerHTML = '';
+  }
+
+  /* —— 分级刻度 —— */
+  $('mapHint').textContent = '你的 ' + total + ' 分落在「' + lv.name + '」这一档（' + LEVEL_RANGES[li] + ' 分）。';
+  const row = $('scaleRow'), labels = $('scaleLabels');
+  row.innerHTML = ''; labels.innerHTML = '';
+  LEVELS.forEach((L, i) => {
+    row.innerHTML += '<i class="' + (i === li ? 'on' : '') + '" style="background:' + L.col + '"></i>';
+    labels.innerHTML += '<span class="' + (i === li ? 'on' : '') + '">' + LEVEL_RANGES[i] + '</span>';
+  });
+
+  /* —— 9 项明细 —— */
+  const sx = $('sxList'); sx.innerHTML = '';
+  ITEMS.forEach((t, i) => {
+    const v = Math.max(0, answers[i]);
+    let bars = '';
+    for(let k = 0; k < SCALE_MAX; k++){
+      bars += '<i class="' + (k < v ? 'f' : '') + '" style="--lv:' + lv.col + '"></i>';
+    }
+    const flag = (i === 8 && v > 0) ? ' flag' : '';
+    sx.innerHTML +=
+      '<div class="sx' + flag + '">' +
+        '<div class="sx-top"><b>' + (i + 1) + '. ' + t + '</b><em>' + OPTS_SHORT[v] + '</em></div>' +
+        '<div class="sx-track">' + bars + '</div>' +
+      '</div>';
+  });
+
+  /* —— 功能损害 —— */
+  if(impair >= 0){
+    $('impairSec').style.display = '';
+    const note = impair === 0
+      ? '这些问题目前还没有明显影响你的日常运转。'
+      : (impair === 1
+        ? '这些问题已经对你的工作、家务或人际交往产生了一些影响。'
+        : '这些问题已经明显影响到你的日常工作、家务或人际交往了——这一点在就诊时值得特别告诉医生。');
+    $('impairBody').innerHTML =
+      '<p class="hint" style="margin:0 0 10px">' + IMPAIR_Q + '</p>' +
+      '<div class="sx"><div class="sx-top"><b>影响程度</b><em>' + IMPAIR_OPTS[impair] + '</em></div>' +
+      '<div class="sx-track">' + [0,1,2,3].map(k =>
+        '<i class="' + (k < impair ? 'f' : '') + '" style="--lv:' + lv.col + '"></i>').join('') +
+      '</div></div>' +
+      '<p class="hint" style="margin:12px 0 0">' + note + '</p>';
+  } else {
+    $('impairSec').style.display = 'none';
+  }
+
+  /* —— 建议 —— */
+  const al = $('adviceList'); al.innerHTML = '';
+  ADVICE[li].forEach(x => { al.innerHTML += '<li>' + x + '</li>'; });
+  if(impair >= 2){
+    al.innerHTML += '<li><b>你的症状已经明显影响日常生活</b>，这在临床上是一个重要信号，建议尽快就诊。</li>';
+  }
+  if(risky){
+    al.innerHTML += '<li><b>请优先处理第 9 题提到的念头</b>——先联系 12356 或告诉你信任的人，其余的事都可以之后再说。</li>';
+  }
+
+  /* —— 结果图片 —— */
+  $('previewBox').style.display = 'none';
+  $('resultImg').removeAttribute('src');
+  drawResultCard();
+
+  $('resScroll').scrollTop = 0;
+  show('s-result');
+}
+
+function mixWhite(hex, a){
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const m = v => Math.round(v * a + 255 * (1 - a));
+  return 'rgb(' + m(r) + ',' + m(g) + ',' + m(b) + ')';
+}
+
+/* ============ 结果卡片 ============
+   注意：这里只做「保存给自己 / 给医生看」，不做社交分享。
+   抑郁筛查结果是健康隐私，不适合当成社交货币传播。 */
+/* 按实际渲染宽度截断，避免长题干溢出画布或与右侧内容重叠 */
+function fitText(x, text, maxW){
+  if(x.measureText(text).width <= maxW) return text;
+  let s = text;
+  while(s.length > 1 && x.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+  return s + '…';
+}
+
+function drawResultCard(){
+  const c = $('resCanvas'), x = c.getContext('2d');
+  const W = c.width, H = c.height;
+  const R = RESULT, lv = R.lv;
+  x.clearRect(0, 0, W, H);
+  x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+  x.fillStyle = lv.col; x.fillRect(0, 0, W, 320);
+  x.textAlign = 'center';
+
+  x.fillStyle = 'rgba(255,255,255,.85)';
+  x.font = '400 24px -apple-system,"PingFang SC",sans-serif';
+  x.fillText('PHQ-9 情绪状态自评', W / 2, 96);
+
+  x.fillStyle = '#fff';
+  x.font = '700 116px -apple-system,"PingFang SC",sans-serif';
+  x.fillText(String(R.total), W / 2 - 34, 232);
+  x.font = '500 34px -apple-system,"PingFang SC",sans-serif';
+  x.fillStyle = 'rgba(255,255,255,.72)';
+  x.fillText('/ 27', W / 2 + 62, 232);
+
+  x.fillStyle = 'rgba(255,255,255,.95)';
+  x.font = '600 30px -apple-system,"PingFang SC",sans-serif';
+  x.fillText('提示：' + lv.name + '抑郁症状', W / 2, 284);
+
+  /* 分级刻度 */
+  const bx = 70, bw = W - 140, by = 380, bh = 16, gap = 6;
+  const cw = (bw - gap * 4) / 5;
+  LEVELS.forEach((L, i) => {
+    x.globalAlpha = i === R.li ? 1 : 0.3;
+    x.fillStyle = L.col;
+    roundRect(x, bx + i * (cw + gap), by, cw, bh, 6);
+    x.fill();
+  });
+  x.globalAlpha = 1;
+  x.font = '400 20px -apple-system,"PingFang SC",sans-serif';
+  LEVELS.forEach((L, i) => {
+    x.fillStyle = i === R.li ? '#22252C' : '#9296A0';
+    x.fillText(LEVEL_RANGES[i], bx + i * (cw + gap) + cw / 2, by + 44);
+  });
+
+  /* 9 项条：从 y=500 起，每行 66px，最后一行条底 ≈ 1053，页脚从 1140 起 */
+  let y = 500;
+  x.textAlign = 'left';
+  x.font = '400 21px -apple-system,"PingFang SC",sans-serif';
+  ITEMS.forEach((t, i) => {
+    const v = Math.max(0, R.answers[i]);
+    x.fillStyle = '#585D68';
+    x.fillText((i + 1) + '. ' + fitText(x, t, W - 140), 70, y);
+    const tx = 70, tw = W - 140, ty = y + 16, th = 9, g2 = 5;
+    const sw = (tw - g2 * 3) / 4;
+    for(let k = 0; k < 4; k++){
+      x.fillStyle = k < v ? lv.col : '#EDECE7';
+      roundRect(x, tx + k * (sw + g2), ty, sw, th, 4);
+      x.fill();
+    }
+    y += 66;
+  });
+
+  /* 页脚 */
+  x.textAlign = 'center';
+  x.fillStyle = '#9296A0';
+  x.font = '400 20px -apple-system,"PingFang SC",sans-serif';
+  x.fillText('自评日期 ' + fmtDate(R.date) + ' · 本结果不是医学诊断', W / 2, H - 80);
+  x.fillStyle = '#8A5A2B';
+  x.font = '500 22px -apple-system,"PingFang SC",sans-serif';
+  x.fillText('心理援助热线 12356 · 24 小时', W / 2, H - 40);
+
+  try{
+    $('resultImg').src = c.toDataURL('image/png');
+    $('previewBox').style.display = '';
+  }catch(e){
+    toast('图片生成失败，可改用「复制文字结果」');
+  }
+}
+function roundRect(x, rx, ry, w, h, r){
+  x.beginPath();
+  x.moveTo(rx + r, ry);
+  x.arcTo(rx + w, ry, rx + w, ry + h, r);
+  x.arcTo(rx + w, ry + h, rx, ry + h, r);
+  x.arcTo(rx, ry + h, rx, ry, r);
+  x.arcTo(rx, ry, rx + w, ry, r);
+  x.closePath();
+}
+function fmtDate(d){
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0');
+}
+
+/* 卡片不接受长按菜单与右键另存——这里没有分享需求，只保留按钮动作 */
+(function(){
+  const img = $('resultImg');
+  if(!img) return;
+  img.addEventListener('contextmenu', e => e.preventDefault());
+  img.addEventListener('dragstart', e => e.preventDefault());
+})();
+
+function saveResult(){
+  if(!RESULT){ toast('还没有生成结果'); return; }
+  try{
+    const url = $('resCanvas').toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'PHQ9-自评-' + fmtDate(RESULT.date) + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('图片已开始下载，长按上方图片也可以保存');
+  }catch(e){ toast('保存失败，请长按上方图片保存'); }
+}
+
+function copyResult(){
+  if(!RESULT){ toast('还没有生成结果'); return; }
+  const R = RESULT;
+  const lines = [];
+  lines.push('PHQ-9 情绪状态自评结果');
+  lines.push('日期：' + fmtDate(R.date));
+  lines.push('总分：' + R.total + ' / 27（提示：' + R.lv.name + '抑郁症状）');
+  lines.push('');
+  lines.push('各条目得分（0 完全不会 – 3 几乎每天）：');
+  ITEMS.forEach((t, i) => lines.push('  ' + (i + 1) + '. ' + t + '：' + Math.max(0, R.answers[i]) + '（' + OPTS_SHORT[Math.max(0, R.answers[i])] + '）'));
+  if(R.impair >= 0) lines.push('生活影响：' + IMPAIR_OPTS[R.impair]);
+  lines.push('');
+  lines.push('说明：本结果由 PHQ-9 自评量表生成，反映最近两周的症状频率，不等于诊断，不能替代医生面诊。');
+  const text = lines.join('\n');
+
+  const done = () => toast('已复制，可以直接发给医生');
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e){}
+    ta.remove();
+    ok ? done() : toast('复制失败，请长按页面手动选择');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else { fallback(); }
+}
+
+/* 只有确实存在未完成的作答时才显示「继续上次进度」，
+   首次进来的人看不到这个按钮 —— 既省一屏高度，也不会误导 */
+function syncResume(){
+  const b = $('btnResume'); if(!b) return;
+  let has = false;
+  try{
+    const p = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
+    has = !!(p && p.a && p.a.length === NQ && p.a.some(v => v >= 0));
+  }catch(e){}
+  b.style.display = has ? '' : 'none';
+}
+
+function restart(){
+  if(!confirm('确定要重新自评吗？当前结果会被清空。')) return;
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  idx = 0; answers = new Array(NQ).fill(-1); RESULT = null;
+  show('s-cover');
+  syncResume();
+}
+
+syncResume();
+</script>
+</body>
+</html>
